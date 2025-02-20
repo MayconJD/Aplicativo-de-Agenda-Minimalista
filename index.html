@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('fundo1.jpg');
+            background-size: cover;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            height: 100vh; /* Altura total da tela */
+            display: flex; /* Usando flexbox para organizar as telas */
+            flex-direction: column; /* Alinha os itens em coluna */
+            justify-content: flex-start; /* Alinha os itens no topo */
+        }
+        .container {
+            width: 80%;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px auto; /* Centraliza horizontalmente e adiciona margem superior */
+        }
+        .hidden {
+            display: none;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px; /* Ajuste o espaçamento inferior */
+            font-weight: 200; /* Poppins Extralight */
+        }
+        .today-title {
+            font-weight: bold; /* Deixa o texto "TODAY" em negrito */
+        }
+        .today-date {
+            margin-top: 5px; /* Menor espaçamento acima da data */
+            font-weight: 200; /* Mantém o peso da fonte leve */
+        }
+        input, button {
+            font-family: 'Poppins', sans-serif;
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 80%;
+            font-size: 16px;
+            border: 0.5px solid #ffffff;
+            border-radius: 40px; /* Bordas arredondadas */
+        }
+        button {
+            background-color: white; /* Fundo branco */
+            color: black; /* Texto preto */
+            cursor: pointer;
+        }
+        .schedule {
+            text-align: center; /* Centraliza os compromissos */
+            margin-top: 20px;
+        }
+        .back-button {
+            position: absolute;
+            bottom: 20px; /* Mantém o botão de voltar na parte inferior */
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <div id="screen1" class="container">
+        <h1>-Agenda-</h1>
+        <input type="text" id="eventName" placeholder="Nome do compromisso">
+        <input type="date" id="eventDate">
+        <input type="time" id="eventTime">
+        <button onclick="addEvent()">Marcar</button>
+        <button onclick="showScreen('screen2')">Agenda</button>
+        <button id="todayBtn" class="hidden" onclick="showScreen('screen3')">Today</button>
+    </div>
+    
+    <div id="screen2" class="container hidden">
+        <h1>Agenda</h1>
+        <div id="fullSchedule" class="schedule"></div>
+        <button class="back-button" onclick="showScreen('screen1')">Voltar</button>
+    </div>
+    
+    <div id="screen3" class="container hidden">
+        <h1 class="today-title">TODAY</h1>
+        <p id="todayDate" class="today-date"></p>
+        <div id="todaySchedule" class="schedule"></div>
+        <button class="back-button" onclick="showScreen('screen1')">Voltar</button>
+    </div>
+    
+    <script>
+        let events = JSON.parse(localStorage.getItem('events')) || [];
+
+        function addEvent() {
+            let name = document.getElementById('eventName').value;
+            let date = document.getElementById('eventDate').value;
+            let time = document.getElementById('eventTime').value;
+            if (name && date && time) {
+                events.push({ name, date, time });
+                localStorage.setItem('events', JSON.stringify(events)); // Salva no Local Storage
+                document.getElementById('eventName').value = '';
+                document.getElementById('eventDate').value = '';
+                document.getElementById('eventTime').value = '';
+                document.getElementById('todayBtn').classList.remove('hidden');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.getElementById('screen1').classList.add('hidden');
+            document.getElementById('screen2').classList.add('hidden');
+            document.getElementById('screen3').classList.add('hidden');
+            document.getElementById(screenId).classList.remove('hidden');
+            if (screenId === 'screen2') {
+                displayFullSchedule();
+            } else if (screenId === 'screen3') {
+                displayTodaySchedule();
+            }
+        }
+
+        function displayFullSchedule() {
+            let scheduleDiv = document.getElementById('fullSchedule');
+            scheduleDiv.innerHTML = '';
+            removePastEvents(); // Remove eventos passados antes de exibir
+            events.forEach(event => {
+                let dateParts = event.date.split('-');
+                let formattedDate = `${dateParts[2]} de ${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][dateParts[1] - 1]}`;
+                scheduleDiv.innerHTML += `<p style="font-weight: 200;">${formattedDate}</p><p style="font-weight: 100;">${event.name} às ${event.time}</p>`;
+            });
+        }
+
+        function displayTodaySchedule() {
+            let today = new Date().toISOString().split('T')[0];
+            let todayParts = today.split('-');
+            let formattedToday = `${todayParts[2]} de ${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][todayParts[1] - 1]}`;
+            document.getElementById('todayDate').innerText = formattedToday;
+            let scheduleDiv = document.getElementById('todaySchedule');
+            scheduleDiv.innerHTML = '';
+            events.forEach(event => {
+                if (event.date === today) {
+                    scheduleDiv.innerHTML += `<p style="font-weight: 200;">${event.name}</p><p style="font-weight: 100;">${event.time}</p>`;
+                }
+            });
+        }
+
+        function removePastEvents() {
+            const today = new Date().toISOString().split('T')[0]; // Data de hoje
+            events = events.filter(event => event.date >= today); // Filtra eventos que não são passados
+            localStorage.setItem('events', JSON.stringify(events)); // Atualiza o Local Storage
+        }
+    </script>
+</body>
+</html>
